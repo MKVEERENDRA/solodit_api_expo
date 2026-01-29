@@ -2,6 +2,17 @@
 
 A simplified version of the Solodit API Explorer that asks for API key input without exposing any keys in the code.
 
+## Images
+
+### Dashboard
+![Dashboard](images/Screenshot_20260129_191414.png)
+
+
+![Filters](images/Screenshot_20260129_191444.png)
+
+### Results
+![Results](images/Screenshot_20260129_191551.png)
+
 ## Features
 
 - 🔑 **Single API Key**: Enter your API key once per session
