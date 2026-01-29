@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solodit Findings API Explorer - Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Simple Theme Colors */
+        :root {
+            --primary-color: #3b82f6;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --dark-bg: #1f2937;
+            --light-bg: #f9fafb;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        /* Filter styles */
+        .filter-card {
+            background: rgba(31, 41, 55, 0.95);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .filter-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: rgba(55, 65, 81, 0.5);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+        }
+
+        .filter-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .checkbox-enhanced {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--primary-color);
+            border-radius: 4px;
+            margin-right: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(31, 41, 55, 0.8);
+        }
+
+        .checkbox-enhanced:checked {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .search-input-enhanced {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: rgba(31, 41, 55, 0.9);
+            color: #ffffff;
+        }
+
+        .search-input-enhanced:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(31, 41, 55, 0.98);
+        }
+
+        .search-input-enhanced::placeholder {
+            color: #9ca3af;
+        }
+
+        /* Header styling */
+        header {
+            background: rgba(31, 41, 55, 0.95);
+            border-bottom: 1px solid #4b5563;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Results cards */
+        .result-card {
+            background: rgba(31, 41, 55, 0.95);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Impact badges */
+        .impact-high {
+            background: var(--error-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .impact-medium {
+            background: var(--warning-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .impact-low {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .impact-gas {
+            background: var(--secondary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Rate limit bar */
+        .rate-limit-bar {
+            background: linear-gradient(90deg, var(--success-color) 0%, var(--primary-color) 100%);
+            height: 6px;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Toast notification */
+        .toast-notification {
+            background: rgba(31, 41, 55, 0.95);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Text colors */
+        .text-primary {
+            color: #ffffff;
+        }
+
+        .text-secondary {
+            color: #d1d5db;
+        }
+
+        .text-muted {
+            color: #9ca3af;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(31, 41, 55, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+    </style>
+</head>
+
+<body x-data="soloditApp()">
+    <!-- Header -->
+    <header class="shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-primary">🎯 Solodit API Explorer</h1>
+                    <p class="text-sm text-secondary mt-1">Simple Security Audit Findings Explorer</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-secondary">🔑 API Status</div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-24 rounded-full h-2 bg-gray-700">
+                            <div class="h-2 rounded-full transition-all duration-300 rate-limit-bar"
+                                :style="`width: ${(rateLimit.remaining / rateLimit.limit) * 100}%`"></div>
+                        </div>
+                        <span class="text-xs font-bold text-primary" x-text="`${rateLimit.remaining}/${rateLimit.limit}`"></span>
+                    </div>
+                    <div x-show="sleeping" class="text-xs text-yellow-400 font-medium">
+                        ⏱️ 😴 Sleeping: <span x-text="getSleepTimeRemaining()"></span>s
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- API Key Input Section -->
+        <div class="filter-card mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm font-medium text-primary">🔑 API Key</span>
+                        <input type="password" x-model="apiKey" placeholder="Enter your Solodit API key"
+                            class="search-input-enhanced w-64">
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm text-secondary">⚡ Remaining:</span>
+                        <span class="text-sm font-bold text-primary" x-text="rateLimit.remaining"></span>
+                        <span class="text-sm text-secondary">/</span>
+                        <span class="text-sm font-bold" x-text="rateLimit.limit"></span>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="clearAllFilters()"
+                        class="text-sm text-red-400 hover:text-red-300 transition-colors px-4 py-2 border border-red-400 rounded-lg hover:bg-red-400 hover:text-white">
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <section class="mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-primary mb-2">🎛️ Filter Configuration</h2>
+                <p class="text-secondary">Explore security audit findings with powerful filtering options</p>
+            </div>
+
+            <!-- Filter Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Impact Levels -->
+                <div class="filter-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-primary">🎯 Impact Levels</h3>
+                    </div>
+                    <div>
+                        <div class="mb-4">
+                            <input type="text" x-model="impactSearch" placeholder="🔍 Search impacts..."
+                                class="search-input-enhanced">
+                            <button @click="impactSearch = ''" x-show="impactSearch"
+                                class="text-xs text-red-400 hover:text-red-300 mt-2">
+                                ❌ Clear
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-80 overflow-y-auto">
+                            <template x-for="impact in filteredImpacts" :key="impact.value">
+                                <label class="filter-item">
+                                    <input type="checkbox" :value="impact.value" x-model="filters.impact"
+                                        class="checkbox-enhanced">
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium" x-text="impact.label"></span>
+                                        <span class="text-xs text-muted ml-2" x-text="`(${impact.count})`"></span>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Firms -->
+                <div class="filter-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-primary">🏢 Audit Firms</h3>
+                    </div>
+                    <div>
+                        <div class="mb-4">
+                            <input type="text" x-model="firmSearch" placeholder="🔍 Search audit firms..."
+                                class="search-input-enhanced">
+                            <button @click="firmSearch = ''" x-show="firmSearch"
+                                class="text-xs text-red-400 hover:text-red-300 mt-2">
+                                ❌ Clear
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-80 overflow-y-auto">
+                            <template x-for="firm in filteredFirms" :key="firm.value">
+                                <label class="filter-item">
+                                    <input type="checkbox" :value="firm.value" x-model="filters.firms"
+                                        class="checkbox-enhanced">
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium" x-text="firm.label"></span>
+                                        <span class="text-xs text-muted ml-2" x-text="`(${firm.count})`"></span>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="filter-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-primary">🏷️ Tags</h3>
+                    </div>
+                    <div>
+                        <div class="mb-4">
+                            <input type="text" x-model="tagSearch" placeholder="🔍 Search tags..."
+                                class="search-input-enhanced">
+                            <button @click="tagSearch = ''" x-show="tagSearch"
+                                class="text-xs text-red-400 hover:text-red-300 mt-2">
+                                ❌ Clear
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-80 overflow-y-auto">
+                            <template x-for="tag in filteredTags" :key="tag.value">
+                                <label class="filter-item">
+                                    <input type="checkbox" :value="tag.value" x-model="filters.tags"
+                                        class="checkbox-enhanced">
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium" x-text="tag.label"></span>
+                                        <span class="text-xs text-muted ml-2" x-text="`(${tag.count})`"></span>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Protocol Categories -->
+                <div class="filter-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-primary">🔗 Protocol Categories</h3>
+                    </div>
+                    <div>
+                        <div class="mb-4">
+                            <input type="text" x-model="categorySearch" placeholder="🔍 Search categories..."
+                                class="search-input-enhanced">
+                            <button @click="categorySearch = ''" x-show="categorySearch"
+                                class="text-xs text-red-400 hover:text-red-300 mt-2">
+                                ❌ Clear
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-80 overflow-y-auto">
+                            <template x-for="category in filteredCategories" :key="category.value">
+                                <label class="filter-item">
+                                    <input type="checkbox" :value="category.value" x-model="filters.protocolCategories"
+                                        class="checkbox-enhanced">
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium" x-text="category.label"></span>
+                                        <span class="text-xs text-muted ml-2" x-text="`(${category.count})`"></span>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Programming Languages -->
+                <div class="filter-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-primary">💻 Programming Languages</h3>
+                    </div>
+                    <div>
+                        <div class="mb-4">
+                            <input type="text" x-model="languageSearch" placeholder="🔍 Search languages..."
+                                class="search-input-enhanced">
+                            <button @click="languageSearch = ''" x-show="languageSearch"
+                                class="text-xs text-red-400 hover:text-red-300 mt-2">
+                                ❌ Clear
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-80 overflow-y-auto">
+                            <template x-for="lang in filteredLanguages" :key="lang.value">
+                                <label class="filter-item">
+                                    <input type="checkbox" :value="lang.value" x-model="filters.languages"
+                                        class="checkbox-enhanced">
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium" x-text="lang.label"></span>
+                                        <span class="text-xs text-muted ml-2" x-text="`(${lang.count})`"></span>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="filter-card lg:col-span-2 xl:col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-primary">⚙️ Advanced Filters</h3>
+                    </div>
+                    <div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Keywords -->
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">🔍 Keywords</label>
+                                <input type="text" x-model="filters.keywords" placeholder="Search in title and content"
+                                    class="search-input-enhanced">
+                            </div>
+
+                            <!-- Protocol Name -->
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">🔗 Protocol Name</label>
+                                <input type="text" x-model="filters.protocol" placeholder="Partial match"
+                                    class="search-input-enhanced">
+                            </div>
+
+                            <!-- Finder Handle -->
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">👤 Finder Handle</label>
+                                <input type="text" x-model="filters.user" placeholder="Partial match"
+                                    class="search-input-enhanced">
+                            </div>
+
+                            <!-- Quality & Rarity Scores -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">⭐ Min Quality Score</label>
+                                    <select x-model.number="filters.qualityScore" class="search-input-enhanced">
+                                        <option value="">Any</option>
+                                        <option value="1">1+</option>
+                                        <option value="2">2+</option>
+                                        <option value="3">3+</option>
+                                        <option value="4">4+</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">💎 Min Rarity Score</label>
+                                    <select x-model.number="filters.rarityScore" class="search-input-enhanced">
+                                        <option value="">Any</option>
+                                        <option value="1">1+</option>
+                                        <option value="2">2+</option>
+                                        <option value="3">3+</option>
+                                        <option value="4">4+</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Date Range -->
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">📅 Date Range</label>
+                                <select x-model="filters.reported" class="search-input-enhanced">
+                                    <option value="alltime">All Time</option>
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="60">Last 60 Days</option>
+                                    <option value="90">Last 90 Days</option>
+                                    <option value="after">After Date</option>
+                                </select>
+                                <input type="date" x-model="filters.reportedAfter" x-show="filters.reported === 'after'"
+                                    class="search-input-enhanced mt-2">
+                            </div>
+
+                            <!-- Page Size -->
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">📊 Findings to Fetch</label>
+                                <input type="number" x-model.number="pagination.pageSize" min="1" max="10000"
+                                    placeholder="Custom count" class="search-input-enhanced">
+                                <p class="text-xs text-muted mt-1">How many findings to fetch per search (1-10000)</p>
+                            </div>
+
+                            <!-- Sort Options -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">📊 Sort By</label>
+                                    <select x-model="filters.sortField" class="search-input-enhanced">
+                                        <option value="Recency">Recency</option>
+                                        <option value="Quality">Quality</option>
+                                        <option value="Rarity">Rarity</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">⬆️ Sort Direction</label>
+                                    <select x-model="filters.sortDirection" class="search-input-enhanced">
+                                        <option value="Desc">Descending</option>
+                                        <option value="Asc">Ascending</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Button -->
+            <div class="text-center mt-8">
+                <button @click="searchFindings()" :disabled="loading"
+                    class="btn-primary px-12 py-3 rounded-lg text-lg font-bold">
+                    <span x-show="!loading">🔍 Search Findings</span>
+                    <span x-show="loading" class="loading">⚡ Searching...</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section>
+            <!-- Results Header -->
+            <div class="result-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-primary">🎯 Search Results</h2>
+                        <p class="text-secondary mt-1" x-show="results">
+                            📊 Found <span x-text="results?.metadata?.totalResults || 0"></span> findings
+                            <span x-show="results?.findings">
+                                (Showing <span x-text="results?.findings?.length || 0"></span> of <span
+                                    x-text="pagination.pageSize"></span>)
+                            </span>
+                            <span x-show="results?.metadata?.totalPages > 1">
+                                (📄 Page <span x-text="results?.metadata?.currentPage || 1"></span> of <span
+                                    x-text="results?.metadata?.totalPages || 1"></span>)
+                            </span>
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button @click="exportToMarkdown()" :disabled="!results || results.findings.length === 0"
+                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
+                            📄 Export to Markdown
+                        </button>
+                        <button @click="copyCurlCommand()"
+                            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
+                            📋 Copy cURL
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Findings List -->
+            <div x-show="results && results?.findings && results.findings.length > 0" class="space-y-6">
+                <template x-for="finding in results?.findings || []" :key="finding.id">
+                    <div class="result-card">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-primary flex-1" x-text="finding.title"></h3>
+                            <span class="ml-4 font-bold rounded-full" :class="{
+                                      'impact-high': finding.impact === 'HIGH',
+                                      'impact-medium': finding.impact === 'MEDIUM',
+                                      'impact-low': finding.impact === 'LOW',
+                                      'impact-gas': finding.impact === 'GAS'
+                                  }" x-text="finding.impact">
+                            </span>
+                        </div>
+
+                        <p class="text-secondary text-base mb-4 line-clamp-3"
+                            x-text="finding.summary || finding.content?.substring(0, 300) + '...'"></p>
+
+                        <div class="flex flex-wrap items-center gap-4 text-sm text-muted mb-4">
+                            <span x-show="finding.firm_name">
+                                <strong>🏢 Firm:</strong> <span x-text="finding.firm_name"></span>
+                            </span>
+                            <span x-show="finding.protocol_name">
+                                <strong>🔗 Protocol:</strong> <span x-text="finding.protocol_name"></span>
+                            </span>
+                            <span>
+                                <strong>⭐ Quality:</strong> <span x-text="finding.quality_score"></span>/5
+                            </span>
+                            <span>
+                                <strong>💎 Rarity:</strong> <span x-text="finding.general_score"></span>/5
+                            </span>
+                            <span x-show="finding.report_date">
+                                <strong>📅 Date:</strong> <span
+                                    x-text="new Date(finding.report_date).toLocaleDateString()"></span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-wrap gap-1 mb-4">
+                            <template x-for="tag in finding.issues_issuetagscore" :key="tag.tags_tag.title">
+                                <span class="inline-block bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded"
+                                    x-text="tag.tags_tag.title"></span>
+                            </template>
+                        </div>
+
+                        <div class="flex space-x-3">
+                            <a x-show="finding.source_link" :href="finding.source_link" target="_blank"
+                                class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                                📄 View Source →
+                            </a>
+                            <a x-show="finding.github_link" :href="finding.github_link" target="_blank"
+                                class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                                💻 GitHub →
+                            </a>
+                            <a x-show="finding.pdf_link" :href="finding.pdf_link" target="_blank"
+                                class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                                📋 PDF →
+                            </a>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- No Results -->
+            <div x-show="results && (!results?.findings || results.findings.length === 0)"
+                class="result-card text-center">
+                <div class="text-gray-400 text-6xl mb-4">🔍</div>
+                <h3 class="text-xl font-bold text-primary mb-2">No findings found</h3>
+                <p class="text-secondary">Try adjusting your filters or search terms</p>
+            </div>
+
+            <!-- Initial State -->
+            <div x-show="!results" class="result-card text-center">
+                <div class="text-gray-400 text-6xl mb-4">🎯</div>
+                <h3 class="text-xl font-bold text-primary mb-2">🚀 Ready to search</h3>
+                <p class="text-secondary">Configure your filters above and start exploring!</p>
+            </div>
+
+            <!-- Pagination -->
+            <div x-show="results && (results?.metadata?.totalPages || 0) > 1"
+                class="result-card">
+                <div class="flex items-center justify-between">
+                    <button @click="previousPage()" :disabled="pagination.page <= 1"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
+                        ← Previous
+                    </button>
+                    <span class="text-primary text-lg">
+                        Page <span x-text="pagination.page"></span> of <span
+                            x-text="results?.metadata?.totalPages || 1"></span>
+                    </span>
+                    <button @click="nextPage()"
+                        :disabled="!results || pagination.page >= (results?.metadata?.totalPages || 1)"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
+                        Next →
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-y-full"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform translate-y-full"
+        class="toast-notification fixed bottom-4 right-4 z-50">
+        <span x-text="toast.message"></span>
+    </div>
+</body>
+
+</html>
+
+<script src="app.js"></script>
